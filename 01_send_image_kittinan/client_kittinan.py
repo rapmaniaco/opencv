@@ -1,0 +1,34 @@
+#https://gist.github.com/kittinan/e7ecefddda5616eab2765fdb2affed1b
+
+import cv2
+import io
+import socket
+import struct
+import time
+import pickle
+import zlib
+
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client_socket.connect(('192.168.0.133', 8485))
+connection = client_socket.makefile('wb')
+
+cam = cv2.VideoCapture('Bangkok-30945.mp4')
+
+img_counter = 0
+
+encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+ret=True
+while (ret == True):
+    ret, frame = cam.read()
+    if (ret==True):
+        result, frame = cv2.imencode('.jpg', frame, encode_param)
+#    data = zlib.compress(pickle.dumps(frame, 0))
+        data = pickle.dumps(frame, 0)
+        size = len(data)
+
+
+        print("{}: {}".format(img_counter, size))
+        client_socket.sendall(struct.pack(">L", size) + data)
+        img_counter += 1
+
+cam.release()
